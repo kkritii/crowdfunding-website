@@ -1,0 +1,119 @@
+@use "../../../assets/scss/style.scss" as *;
+.joinContainer {
+  .header {
+    padding: 5px 30px;
+    .logo {
+      .logoImg {
+        width: 60px;
+        height: 60px;
+      }
+      .logoTitle {
+        display: inline;
+        position: relative;
+        top: -20px;
+        color: $primary;
+        margin-left: 10px;
+        font-size: 24px;
+      }
+    }
+    @media screen and (min-width: 768px) {
+      padding: 15px 40px;
+      .logoTitle {
+        top: -17px;
+        font-size: 32px;
+      }
+    }
+    @media screen and (min-width: 992px) {
+      padding: 20px 60px;
+    }
+  }
+
+  .IntroSide {
+    display: none;
+
+    @media screen and (min-width: 768px) {
+      width: 50%;
+      float: left;
+      padding: 0px 60px;
+      display: block;
+
+      .loginImageWrapper {
+        padding-top: 150px;
+        .loginImgContainer {
+          width: 300px;
+          margin: auto;
+          .loginPageImg {
+            width: 100%;
+          }
+        }
+      }
+    }
+    @media screen and (min-width: 992px) {
+      .loginImageWrapper {
+        padding-top: 110px;
+        .loginImgContainer {
+          width: 500px;
+        }
+      }
+    }
+  }
+  .LoginSide {
+    padding: 0px 40px;
+    .loginSide_div {
+      margin: auto;
+      max-width: 450px;
+      margin-top: 110px;
+    }
+    .welcomeContainer {
+      margin-bottom: 15px;
+      .welcomeText {
+        font-family: "Ubuntu", sans-serif;
+        font-weight: 700;
+        font-size: 40px;
+        color: $dark;
+        line-height: 48px;
+        .title {
+          color: $primary;
+        }
+      }
+      .loginInstruction {
+        font-size: 20px;
+        color: $faded;
+        margin-top: 0;
+      }
+    }
+    .signupText {
+      margin-top: 40px;
+      font-size: 16px;
+      color: $faded;
+      a {
+        color: $primary;
+        text-decoration: none;
+      }
+    }
+
+    @media screen and (min-width: 768px) {
+      width: 50%;
+      float: right;
+      padding: 0px 60px;
+      height: 75vh;
+      border-left: $light 3px solid;
+      .loginSide_div {
+        margin: auto;
+        margin-top: 110px;
+      }
+      .welcomeContainer {
+        .welcomeText {
+          font-size: 40px;
+          color: $dark;
+          margin-bottom: 5px;
+        }
+        .loginInstruction {
+          font-size: 20px;
+          color: $faded;
+          margin-top: 0;
+        }
+      }
+    }
+  }
+}
