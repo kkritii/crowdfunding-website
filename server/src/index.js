@@ -1,25 +1,30 @@
-import React from 'react';
-import thunk from "redux-thunk";
-import ReactDOM from 'react-dom';
-import { Provider } from "react-redux";
-import { createStore, applyMiddleware } from "redux";
+import cors from 'cors';
+import helmet from 'helmet';
+import dotenv from 'dotenv';
+import morgan from 'morgan';
+import express from 'express';
+import bodyParser from 'body-parser';
+import serveFavicon from 'serve-favicon';
 
-import "./public";
-import reducers from "./reducers";
-import App from './components/App';
+import router from './routes.js';
+import logger, { logStream } from './utils/logger.js';
+import errorHandler from './middlewares/errorHandler.js';
 
-const store = createStore(
-  reducers,
-  window.__REDUX_DEVTOOLS_EXTENSION_COMPOSE__({
-    // Specify extension’s options like name, actionsBlacklist, actionsCreators, serialize...
-  })(applyMiddleware(thunk))
-);
+const server = express();
 
-ReactDOM.render(
-  <React.StrictMode>
-    <Provider store={store}>
-      <App />
-    </Provider>
-  </React.StrictMode>,
-  document.getElementById('root')
-);
+dotenv.config();
+
+server.use(cors());
+server.use(serveFavicon('../server/public/favicon.png'));
+
+server.use(helmet());
+server.use(morgan('dev', { stream: logStream }));
+server.use(bodyParser.json());
+
+server.use(router);
+
+server.use(errorHandler);
+
+server.listen(process.env.PORT, () => {
+  logger.info(`Listening on localhost:${process.env.PORT}`);
+});

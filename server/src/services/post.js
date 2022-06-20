@@ -1,92 +1,149 @@
-import axios from "axios";
-import { toast } from "react-toastify";
+import Boom from "@hapi/boom";
 
-import config from "../config";
-import { interpolate, unParseQuery } from "../utils/string";
+import Post from "../models/Post.js";
+import logger from "../utils/logger.js";
+import User from "../models/User.js";
 
-export const fetchPosts = async (query) => {
-  const url = `${config.apiUrl}${config.endpoints.posts}${unParseQuery(query)}`;
-  const { data } = await axios.get(url, {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("userToken")}`,
-    },
-  });
-  return data.data;
-};
+/**
+ * Create a new post.
+ *
+ * @param {Object} params
+ * @return {Object}
+ */
+export async function createPost(params,user) {
+  // console.log(params);
 
-export const fetchPost = async (id) => {
-  const url = `${config.apiUrl}${config.endpoints.post}`;
-  const response = await axios.get(interpolate(url, { id }), {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("userToken")}`,
-    },
-  });
-  return response.data.data;
-};
+  const { postTitle, postDescription, targetAmount, category, endDate } = params;
+  const ownerUserId = user.id;
+  const ownerUser =  await new User().getById(ownerUserId);
 
-export const createPost = async (data) => {
-  const url = `${config.apiUrl}${config.endpoints.addPost}`;
-  const response = await axios.post(url, data, {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("userToken")}`,
-    },
-  });
-  return response.data.data;
-};
 
-export const updatePost = async (data) => {
-  const url = `${config.apiUrl}${config.endpoints.postUpdate}`;
-  const response = await axios.post(url, data, {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("userToken")}`,
-    },
-  });
-  return response.data.data;
-};
-
-export const deletePost = async (id) => {
-  const url = `${config.apiUrl}${config.endpoints.deletePost}`;
-  await axios.delete(interpolate(url, { id }), {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("userToken")}`,
-    },
+  const [insertedData] = await new Post().save({
+    postTitle, postDescription, ownerUserId,targetAmount, category, endDate,
   });
 
-  toast.success("Successfuly removed");
-  return id;
-};
-
-export const donatePost = async (data) => {
-  const url = `${config.apiUrl}${config.endpoints.donatePost}`;
-  const response = await axios.post(url, data, {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("userToken")}`,
+  return {
+    data: {
+      ...insertedData,
+      avatar:  ownerUser.avatar,
+      ownerName: ownerUser.fullName
     },
-  });
-  return response.data.data;
-};
+    message: "Added post successfully",
+  };
+}
 
-export const reportPost = async (id) => {
-  const url = `${config.apiUrl}${config.endpoints.reportPost}`;
-  console.log(id);
-  const response = await axios.patch(
-    interpolate(url, { id }),
-    {},
-    {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("userToken")}`,
-      },
-    }
-  );
-  return response.data.data;
-};
+/**
+ * Get list of posts
+ *
+ * @param {Object} [query]
+ * @return {Object}
+ */
+export async function getAllPosts() {
 
-export const postUpdate = async (data) => {
-  const url = `${config.apiUrl}${config.endpoints.postUpdate}`;
-  const response = await axios.post(url, data, {
-    headers: {
-      Authorization: `Bearer ${localStorage.getItem("userToken")}`,
-    },
+  // console.log(query)
+  // const postTitle = query.postTitle;
+  // const ownerUserId = query.ownerUserId;
+  // const category = query.category;
+  
+  logger.info("Fetching list of posts");
+
+  const data = await new Post().getAllPosts();
+ 
+
+  return {
+    data,
+    message: "List of posts",
+  };
+}
+
+/**
+ * Get details of a post by the identifier.
+ *
+ * @param {string} id
+ * @return {Object}
+ */
+ export async function getPost(id) {
+  logger.info(`Fetching post with postId ${id}`);
+
+  const post = await new Post().getPostDetails(id);
+
+  if (!post) {
+    logger.error(`Cannot find post with postId ${id}`);
+
+    throw new Boom.notFound(`Cannot find post with postId ${id}`);
+  }
+
+  const parsedPost = {
+    ...post,
+  };
+
+  return {
+    data: parsedPost,
+    message: `Details of postId ${id}`
+  };
+}
+
+
+/**
+ * Remove an existing record based on the identifier.
+ *
+ * @param {string} id
+ * @return {Object}
+ */
+ export async function removePost(id) {
+  logger.info(`Checking if post with id ${id} exists`);
+
+  const post = await new Post().getById(id);
+
+  if (!post) {
+    logger.error(`Cannot delete post with id ${id} because it doesn't exist`);
+
+    throw new Boom.notFound(`Cannot delete post with id ${id} because it doesn't exist`);
+  }
+
+  await new Post().removeById(id);
+
+  return {
+    message: 'Record removed successfully'
+  };
+}
+
+/**
+ * Update report_count of an existing record based on the identifier.
+ *
+ * @param {string} id
+ * @return {Object}
+ */
+ export async function reportPost(id) {
+  logger.info(`Checking if post with id ${id} exists`);
+
+  const post = await new Post().getById(id);
+
+  if (!post) {
+    logger.error(`Cannot delete post with id ${id} because it doesn't exist`);
+
+    throw new Boom.notFound(
+      `Cannot delete post with id ${id} because it doesn't exist`
+    );
+  }
+
+  let tempReportCount = post.reportCount;
+  let postStatus = post.postStatus;
+  if (tempReportCount < 5) {
+    tempReportCount++;
+  } else {
+    postStatus = "banned";
+  }
+  const [updatedData] = await new Post().updateById(id, {
+    ...post,
+    postStatus: postStatus,
+    reportCount: tempReportCount,
   });
-  return response.data.data;
-};
+
+  return {
+    data: updatedData,
+    message: `Reported of post ${id}`,
+  };
+}
+
+
